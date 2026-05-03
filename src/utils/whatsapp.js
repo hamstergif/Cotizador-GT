@@ -83,30 +83,34 @@ export function buildWhatsAppMessage(formData, quote) {
   messageLines.push("");
   messageLines.push("Estimacion generada:");
   messageLines.push(`Tiempo estimado: ${quote.service.etaLabel}`);
-  messageLines.push(`Costo servicio: ${formatUsd(quote.costs.serviceCostUsd)}`);
-  if (quote.costs.additionalChargesUsd > 0) {
-    messageLines.push(`Tasa de desembolso: ${formatUsd(quote.costs.additionalChargesUsd)}`);
-  }
-  messageLines.push(`Seguro estimado para CIF: ${formatUsd(quote.costs.insuranceUsd)}`);
-  messageLines.push(`CIF: ${formatUsd(quote.costs.cifUsd)}`);
-  messageLines.push(`Derechos de importacion: ${formatUsd(quote.taxes.importDutyUsd)}`);
-  messageLines.push(`Tasa de estadistica: ${formatUsd(quote.taxes.statisticsUsd)}`);
-  messageLines.push(`Base IVA: ${formatUsd(quote.costs.baseVatUsd)}`);
-  messageLines.push(`IVA: ${formatUsd(quote.taxes.vatUsd)}`);
+  if (quote.requiresManualQuote) {
+    messageLines.push(`Resultado: ${quote.manualQuoteMessage ?? "A cotizar manualmente"}`);
+  } else {
+    messageLines.push(`Costo servicio: ${formatUsd(quote.costs.serviceCostUsd)}`);
+    if (quote.costs.additionalChargesUsd > 0) {
+      messageLines.push(`Tasa de desembolso: ${formatUsd(quote.costs.additionalChargesUsd)}`);
+    }
+    messageLines.push(`Seguro estimado para CIF: ${formatUsd(quote.costs.insuranceUsd)}`);
+    messageLines.push(`CIF: ${formatUsd(quote.costs.cifUsd)}`);
+    messageLines.push(`Derechos de importacion: ${formatUsd(quote.taxes.importDutyUsd)}`);
+    messageLines.push(`Tasa de estadistica: ${formatUsd(quote.taxes.statisticsUsd)}`);
+    messageLines.push(`Base IVA: ${formatUsd(quote.costs.baseVatUsd)}`);
+    messageLines.push(`IVA: ${formatUsd(quote.taxes.vatUsd)}`);
 
-  if (quote.service.id === "shared-import") {
-    messageLines.push(`IVA adicional: ${formatUsd(quote.taxes.additionalVatUsd)}`);
-    messageLines.push(`Ganancias: ${formatUsd(quote.taxes.earningsTaxUsd)}`);
-    messageLines.push(`Ingresos Brutos: ${formatUsd(quote.taxes.grossIncomeTaxUsd)}`);
-  }
+    if (quote.service.id === "shared-import") {
+      messageLines.push(`IVA adicional: ${formatUsd(quote.taxes.additionalVatUsd)}`);
+      messageLines.push(`Ganancias: ${formatUsd(quote.taxes.earningsTaxUsd)}`);
+      messageLines.push(`Ingresos Brutos: ${formatUsd(quote.taxes.grossIncomeTaxUsd)}`);
+    }
 
-  messageLines.push(`Impuestos estimados: ${formatUsd(quote.costs.taxesTotalUsd)}`);
-  messageLines.push(
-    `Total puesto en Argentina (No incluye el valor del producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
-  );
-  messageLines.push(
-    "Aclaracion total: el seguro se usa para el CIF y el total no incluye el valor del producto (FOB).",
-  );
+    messageLines.push(`Impuestos estimados: ${formatUsd(quote.costs.taxesTotalUsd)}`);
+    messageLines.push(
+      `Total puesto en Argentina (No incluye el valor del producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
+    );
+    messageLines.push(
+      "Aclaracion total: el seguro se usa para el CIF y el total no incluye el valor del producto (FOB).",
+    );
+  }
   messageLines.push("");
   messageLines.push(`Observaciones: ${buildObservations(formData)}`);
   messageLines.push("");

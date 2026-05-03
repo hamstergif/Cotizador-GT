@@ -1,12 +1,5 @@
 import { formatKg, formatM3 } from "./formatters";
 import {
-  AIR_COURIER_AWB_USD,
-  AIR_COURIER_CUSTOMS_FUEL_RATE,
-  AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A,
-  AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS,
-  AIR_COURIER_DISBURSEMENT_BRACKETS,
-  AIR_COURIER_RATE_TABLE,
-  AIR_COURIER_TAXABLE_SERVICE_VAT_RATE,
   COURIER_MARITIME_CUSTOMS_USD_PER_KG,
   COURIER_MARITIME_FIXED_USD,
   COURIER_MARITIME_USD_PER_KG,
@@ -15,11 +8,12 @@ import {
   GLOBAL_NOTES,
   INSURANCE_RATE,
   MARITIME_COURIER_KG_PER_M3,
-  SHARED_IMPORT_CUSTOMS_USD_PER_M3,
-  SHARED_IMPORT_MIN_BILLABLE_M3,
   SERVICES,
+  SHARED_IMPORT_CUSTOMS_USD_PER_M3,
   SHARED_IMPORT_KG_PER_M3,
+  SHARED_IMPORT_MIN_BILLABLE_M3,
   SHARED_IMPORT_USD_PER_M3,
+  TARIFAS_COURIER_FEDEX,
   TAX_PROFILES,
 } from "./rates";
 
@@ -62,71 +56,130 @@ export function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function roundUpToHalfKg(value) {
+  const normalizedValue = Math.max(toNumber(value), 0);
+  return normalizedValue > 0 ? Math.ceil(normalizedValue * 2) / 2 : 0;
+}
+
+export function calcularPesoVolumetrico(
+  largoCm,
+  anchoCm,
+  altoCm,
+  cantidadBultos = 1,
+) {
+  const pesoVol =
+    (toNumber(largoCm) * toNumber(anchoCm) * toNumber(altoCm) * toNumber(cantidadBultos)) /
+    5000;
+
+  return roundUpToHalfKg(pesoVol);
+}
+
+export function calcularPesoAplicable(
+  pesoBrutoKg,
+  largoCm,
+  anchoCm,
+  altoCm,
+  cantidadBultos = 1,
+) {
+  const pesoVolumetricoKg = calcularPesoVolumetrico(
+    largoCm,
+    anchoCm,
+    altoCm,
+    cantidadBultos,
+  );
+
+  return Math.max(toNumber(pesoBrutoKg), pesoVolumetricoKg);
+}
+
+export function buscarTarifaCourierFedEx(pesoAplicableKg) {
+  const normalizedWeightKg = toNumber(pesoAplicableKg);
+
+  if (!normalizedWeightKg || normalizedWeightKg <= 0) {
+    return null;
+  }
+
+  if (normalizedWeightKg > 300) {
+    return null;
+  }
+
+  return (
+    TARIFAS_COURIER_FEDEX.find(
+      (tramo) =>
+        normalizedWeightKg >= tramo.desdeKg && normalizedWeightKg <= tramo.hastaKg,
+    ) ?? null
+  );
+}
+
+function toMoney(value) {
+  return Number(toNumber(value).toFixed(2));
+}
+
+export function calcularCourierFedEx({
+  pesoBrutoKg,
+  largoCm,
+  anchoCm,
+  altoCm,
+  cantidadBultos = 1,
+  altaDemandaUsd = 0,
+}) {
+  const normalizedGrossWeightKg = toNumber(pesoBrutoKg);
+  const normalizedHighDemandUsd = Math.max(toNumber(altaDemandaUsd), 0);
+  const pesoVolumetricoKg = calcularPesoVolumetrico(
+    largoCm,
+    anchoCm,
+    altoCm,
+    cantidadBultos,
+  );
+  const pesoAplicableKg = Math.max(normalizedGrossWeightKg, pesoVolumetricoKg);
+  const tarifa = buscarTarifaCourierFedEx(pesoAplicableKg);
+
+  if (!tarifa) {
+    return {
+      pesoBrutoKg: toMoney(normalizedGrossWeightKg),
+      pesoVolumetricoKg: toMoney(pesoVolumetricoKg),
+      pesoAplicableKg: toMoney(pesoAplicableKg),
+      requiereCotizacionManual: true,
+      mensaje: "A cotizar manualmente",
+      ventaUsdKg: 0,
+      costoUsdKg: 0,
+      ventaFleteUsd: 0,
+      costoFleteUsd: 0,
+      altaDemandaUsd: toMoney(normalizedHighDemandUsd),
+      ventaTotalUsd: toMoney(normalizedHighDemandUsd),
+      costoTotalUsd: toMoney(normalizedHighDemandUsd),
+      gananciaFleteUsd: 0,
+    };
+  }
+
+  const ventaFleteUsd = pesoAplicableKg * tarifa.ventaUsdKg;
+  const costoFleteUsd = pesoAplicableKg * tarifa.costoUsdKg;
+  const ventaTotalUsd = ventaFleteUsd + normalizedHighDemandUsd;
+  const costoTotalUsd = costoFleteUsd + normalizedHighDemandUsd;
+  const gananciaFleteUsd = ventaFleteUsd - costoFleteUsd;
+
+  return {
+    pesoBrutoKg: toMoney(normalizedGrossWeightKg),
+    pesoVolumetricoKg: toMoney(pesoVolumetricoKg),
+    pesoAplicableKg: toMoney(pesoAplicableKg),
+    ventaUsdKg: tarifa.ventaUsdKg,
+    costoUsdKg: tarifa.costoUsdKg,
+    ventaFleteUsd: toMoney(ventaFleteUsd),
+    costoFleteUsd: toMoney(costoFleteUsd),
+    altaDemandaUsd: toMoney(normalizedHighDemandUsd),
+    ventaTotalUsd: toMoney(ventaTotalUsd),
+    costoTotalUsd: toMoney(costoTotalUsd),
+    gananciaFleteUsd: toMoney(gananciaFleteUsd),
+    requiereCotizacionManual: false,
+    mensaje: null,
+  };
+}
+
 function getServiceById(serviceId) {
   return SERVICES.find((service) => service.id === serviceId) ?? SERVICES[0];
 }
 
 function getTaxProfile(serviceId, isTechProduct) {
   return isTechProduct ? TAX_PROFILES.reduced[serviceId] : TAX_PROFILES.standard[serviceId];
-}
-
-function getAirPricing(applicableWeightKg) {
-  if (applicableWeightKg <= 0) {
-    return {
-      bracket: AIR_COURIER_RATE_TABLE[0],
-      freightSaleUsd: 0,
-      usdPerKg: 0,
-    };
-  }
-
-  const bracket =
-    AIR_COURIER_RATE_TABLE.find((entry) => applicableWeightKg <= entry.maxKg) ??
-    AIR_COURIER_RATE_TABLE[AIR_COURIER_RATE_TABLE.length - 1];
-
-  const calculatedUsd = applicableWeightKg * bracket.usdPerKg;
-  const freightSaleUsd = Math.max(calculatedUsd, bracket.minimumUsd ?? 0);
-
-  return {
-    bracket,
-    usdPerKg: bracket.usdPerKg,
-    freightSaleUsd,
-  };
-}
-
-function roundUpToHalfKg(value) {
-  return Math.ceil(Math.max(value, 0.01) * 2) / 2;
-}
-
-function getAirCustomsFreightUsd(applicableWeightKg) {
-  if (applicableWeightKg <= 0) {
-    return 0;
-  }
-
-  const roundedWeightKg = roundUpToHalfKg(applicableWeightKg);
-
-  if (roundedWeightKg <= 20.5) {
-    const bracket =
-      AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A.find((entry) => entry.kg === roundedWeightKg) ??
-      AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A[AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A.length - 1];
-
-    return bracket.totalUsd * (1 + AIR_COURIER_CUSTOMS_FUEL_RATE);
-  }
-
-  const bracket = AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS.reduce(
-    (selectedBracket, entry) =>
-      applicableWeightKg >= entry.fromKg ? entry : selectedBracket,
-    AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS[0],
-  );
-
-  return applicableWeightKg * bracket.usdPerKg;
-}
-
-function getAirDisbursementUsd(taxesTotalUsd) {
-  const bracket =
-    AIR_COURIER_DISBURSEMENT_BRACKETS.find((entry) => taxesTotalUsd < entry.maxTaxesUsd) ??
-    AIR_COURIER_DISBURSEMENT_BRACKETS[AIR_COURIER_DISBURSEMENT_BRACKETS.length - 1];
-
-  return bracket.feeUsd;
 }
 
 export function validateForm(formData, serviceId) {
@@ -190,11 +243,23 @@ export function calculateQuote(serviceId, formData) {
   const widthCm = toNumber(formData.widthCm);
   const heightCm = toNumber(formData.heightCm);
   const fobUsd = toNumber(formData.fobUsd);
+  const altaDemandaUsd = toNumber(formData.altaDemandaUsd ?? formData.highDemandUsd);
 
   const volumePerPackageM3 = (lengthCm * widthCm * heightCm) / 1000000;
   const totalVolumeM3 = volumePerPackageM3 * packageCount;
-  const volumetricWeightKg = ((lengthCm * widthCm * heightCm) / 5000) * packageCount;
-  const applicableWeightKg = Math.max(grossWeightKg, volumetricWeightKg);
+  const volumetricWeightKg = calcularPesoVolumetrico(
+    lengthCm,
+    widthCm,
+    heightCm,
+    packageCount,
+  );
+  const applicableWeightKg = calcularPesoAplicable(
+    grossWeightKg,
+    lengthCm,
+    widthCm,
+    heightCm,
+    packageCount,
+  );
   const averageUnitWeightKg = packageCount > 0 ? grossWeightKg / packageCount : 0;
 
   const maritimeEquivalentWeightKg = totalVolumeM3 * MARITIME_COURIER_KG_PER_M3;
@@ -210,27 +275,90 @@ export function calculateQuote(serviceId, formData) {
   let serviceCostUsd = 0;
   let additionalChargesUsd = 0;
   let customsFreightUsd = 0;
+  let insuranceUsd = fobUsd * INSURANCE_RATE;
+  let cifUsd = 0;
+  let importDutyUsd = 0;
+  let statisticsUsd = 0;
+  let baseVatUsd = 0;
+  let vatUsd = 0;
+  let additionalVatUsd = 0;
+  let earningsTaxUsd = 0;
+  let grossIncomeTaxUsd = 0;
+  let taxesTotalUsd = 0;
+  let totalEstimatedUsd = 0;
+  let requiresManualQuote = false;
+  let manualQuoteMessage = null;
+  let courierFedEx = null;
   let calculationBase = {
     label: service.calculationLabel,
     displayValue: formatKg(applicableWeightKg),
   };
 
   if (serviceId === "air-courier") {
-    serviceCostUsd = getAirPricing(applicableWeightKg).freightSaleUsd;
-    customsFreightUsd = getAirCustomsFreightUsd(applicableWeightKg);
+    courierFedEx = calcularCourierFedEx({
+      pesoBrutoKg: grossWeightKg,
+      largoCm: lengthCm,
+      anchoCm: widthCm,
+      altoCm: heightCm,
+      cantidadBultos: packageCount,
+      altaDemandaUsd,
+    });
+
+    requiresManualQuote = courierFedEx.requiereCotizacionManual;
+    manualQuoteMessage = courierFedEx.mensaje;
+    serviceCostUsd = courierFedEx.ventaTotalUsd;
+    additionalChargesUsd = 0;
+    customsFreightUsd = courierFedEx.costoTotalUsd;
+    insuranceUsd = fobUsd * INSURANCE_RATE;
     calculationBase = {
       label: service.calculationLabel,
-      displayValue: formatKg(applicableWeightKg),
+      displayValue: formatKg(courierFedEx.pesoAplicableKg),
     };
+
+    if (!requiresManualQuote) {
+      cifUsd = fobUsd + customsFreightUsd + insuranceUsd;
+      importDutyUsd = cifUsd * taxProfile.importDuty;
+      statisticsUsd = cifUsd * taxProfile.statisticsRate;
+      baseVatUsd = cifUsd + importDutyUsd + statisticsUsd;
+      vatUsd = baseVatUsd * taxProfile.vat;
+      additionalVatUsd = baseVatUsd * taxProfile.additionalVat;
+      earningsTaxUsd = baseVatUsd * taxProfile.earningsTax;
+      grossIncomeTaxUsd = baseVatUsd * taxProfile.grossIncomeTax;
+      taxesTotalUsd =
+        importDutyUsd +
+        statisticsUsd +
+        vatUsd +
+        additionalVatUsd +
+        earningsTaxUsd +
+        grossIncomeTaxUsd;
+      totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
+    }
   }
 
   if (serviceId === "maritime-courier") {
-    serviceCostUsd = maritimeChargeableWeightKg * COURIER_MARITIME_USD_PER_KG;
+    serviceCostUsd = maritimeChargeableWeightKg * COURIER_MARITIME_USD_PER_KG + COURIER_MARITIME_FIXED_USD;
     customsFreightUsd = maritimeChargeableWeightKg * COURIER_MARITIME_CUSTOMS_USD_PER_KG;
     calculationBase = {
       label: service.calculationLabel,
       displayValue: formatKg(maritimeChargeableWeightKg),
     };
+
+    cifUsd = fobUsd + customsFreightUsd + insuranceUsd;
+    importDutyUsd = cifUsd * taxProfile.importDuty;
+    statisticsUsd = cifUsd * taxProfile.statisticsRate;
+    baseVatUsd = cifUsd + importDutyUsd + statisticsUsd;
+    vatUsd = baseVatUsd * taxProfile.vat;
+    additionalVatUsd = baseVatUsd * taxProfile.additionalVat;
+    earningsTaxUsd = baseVatUsd * taxProfile.earningsTax;
+    grossIncomeTaxUsd = baseVatUsd * taxProfile.grossIncomeTax;
+    taxesTotalUsd =
+      importDutyUsd +
+      statisticsUsd +
+      vatUsd +
+      additionalVatUsd +
+      earningsTaxUsd +
+      grossIncomeTaxUsd;
+    totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
   }
 
   if (serviceId === "shared-import") {
@@ -240,39 +368,24 @@ export function calculateQuote(serviceId, formData) {
       label: service.calculationLabel,
       displayValue: formatM3(sharedChargeableVolumeM3),
     };
+
+    cifUsd = fobUsd + customsFreightUsd + insuranceUsd;
+    importDutyUsd = cifUsd * taxProfile.importDuty;
+    statisticsUsd = cifUsd * taxProfile.statisticsRate;
+    baseVatUsd = cifUsd + importDutyUsd + statisticsUsd;
+    vatUsd = baseVatUsd * taxProfile.vat;
+    additionalVatUsd = baseVatUsd * taxProfile.additionalVat;
+    earningsTaxUsd = baseVatUsd * taxProfile.earningsTax;
+    grossIncomeTaxUsd = baseVatUsd * taxProfile.grossIncomeTax;
+    taxesTotalUsd =
+      importDutyUsd +
+      statisticsUsd +
+      vatUsd +
+      additionalVatUsd +
+      earningsTaxUsd +
+      grossIncomeTaxUsd;
+    totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
   }
-
-  const insuranceUsd = fobUsd * INSURANCE_RATE;
-  const cifUsd = fobUsd + customsFreightUsd + insuranceUsd;
-  const importDutyUsd = cifUsd * taxProfile.importDuty;
-  const statisticsUsd = cifUsd * taxProfile.statisticsRate;
-  const baseVatUsd = cifUsd + importDutyUsd + statisticsUsd;
-  const vatUsd = baseVatUsd * taxProfile.vat;
-  const additionalVatUsd = baseVatUsd * taxProfile.additionalVat;
-  const earningsTaxUsd = baseVatUsd * taxProfile.earningsTax;
-  const grossIncomeTaxUsd = baseVatUsd * taxProfile.grossIncomeTax;
-  const taxesTotalUsd =
-    importDutyUsd +
-    statisticsUsd +
-    vatUsd +
-    additionalVatUsd +
-    earningsTaxUsd +
-    grossIncomeTaxUsd;
-
-  if (serviceId === "air-courier") {
-    const disbursementUsd = getAirDisbursementUsd(taxesTotalUsd);
-    const awbVatUsd = AIR_COURIER_AWB_USD * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
-    const disbursementVatUsd = disbursementUsd * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
-
-    serviceCostUsd += AIR_COURIER_AWB_USD + awbVatUsd;
-    additionalChargesUsd = disbursementUsd + disbursementVatUsd;
-  }
-
-  if (serviceId === "maritime-courier") {
-    serviceCostUsd += COURIER_MARITIME_FIXED_USD;
-  }
-
-  const totalEstimatedUsd = serviceCostUsd + additionalChargesUsd + taxesTotalUsd;
 
   const notes = [GLOBAL_NOTES.estimatorDisclaimer, GLOBAL_NOTES.taxDisclaimer];
 
@@ -284,6 +397,14 @@ export function calculateQuote(serviceId, formData) {
 
   if (serviceId === "air-courier") {
     notes.push("En courier aereo usamos el mayor entre peso real y peso volumetrico.");
+
+    if (requiresManualQuote && manualQuoteMessage) {
+      notes.push(`${manualQuoteMessage}. Para este peso necesitamos revisar la operacion manualmente.`);
+    }
+
+    if (courierFedEx && courierFedEx.altaDemandaUsd > 0) {
+      notes.push("La alta demanda se toma como pass-through: suma venta y costo, pero no agrega margen.");
+    }
   }
 
   if (serviceId === "maritime-courier") {
@@ -309,8 +430,13 @@ export function calculateQuote(serviceId, formData) {
   return {
     service,
     taxProfile,
-    isReady: Object.keys(validationErrors).length === 0,
+    isReady:
+      Object.keys(validationErrors).length === 0 &&
+      !(serviceId === "air-courier" && requiresManualQuote),
+    requiresManualQuote,
+    manualQuoteMessage,
     calculationBase,
+    courierFedEx,
     volumes: {
       volumePerPackageM3,
       totalVolumeM3,

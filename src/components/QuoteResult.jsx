@@ -21,6 +21,10 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
       : copyState === "error"
         ? "No se pudo copiar"
         : "Copiar resumen";
+  const totalBoxLabel = quote.requiresManualQuote ? "Estado" : "Puesto en Argentina";
+  const totalBoxValue = quote.requiresManualQuote
+    ? quote.manualQuoteMessage ?? "A cotizar manualmente"
+    : formatUsd(quote.costs.totalEstimatedUsd);
 
   return (
     <aside className="result-panel">
@@ -55,14 +59,15 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
             <strong>{quote.calculationBase.displayValue}</strong>
           </div>
           <div className="metric-box metric-box--accent">
-            <span>Puesto en Argentina</span>
-            <strong>{formatUsd(quote.costs.totalEstimatedUsd)}</strong>
+            <span>{totalBoxLabel}</span>
+            <strong>{totalBoxValue}</strong>
           </div>
         </div>
 
         <p className="result-card__footnote">
-          El seguro estimado se usa de forma interna para calcular el CIF. El total puesto en
-          Argentina no incluye el valor del producto.
+          {quote.requiresManualQuote
+            ? "El peso aplicable supera 300 kg. La operacion queda para revision manual y no mostramos un total automatico."
+            : "El seguro estimado se usa de forma interna para calcular el CIF. El total puesto en Argentina no incluye el valor del producto."}
         </p>
 
         <div className="result-section">
@@ -120,22 +125,31 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         <div className="result-section">
           <h3>Resumen de costos</h3>
           <ResultRow label="Valor del producto (FOB)" value={formatUsd(quote.costs.fobUsd)} />
-          <ResultRow
-            label="Costo logistico / servicio"
-            value={formatUsd(quote.costs.serviceCostUsd)}
-          />
-          {quote.costs.additionalChargesUsd > 0 ? (
+          {quote.requiresManualQuote ? (
             <ResultRow
-              label="Tasa de desembolso"
-              value={formatUsd(quote.costs.additionalChargesUsd)}
+              label="Resultado"
+              value={quote.manualQuoteMessage ?? "A cotizar manualmente"}
             />
-          ) : null}
-          <ResultRow label="Impuestos estimados" value={formatUsd(quote.costs.taxesTotalUsd)} />
-          <ResultRow
-            label="Total puesto en Argentina (No incluye el valor del producto)"
-            value={formatUsd(quote.costs.totalEstimatedUsd)}
-            highlight
-          />
+          ) : (
+            <>
+              <ResultRow
+                label="Costo logistico / servicio"
+                value={formatUsd(quote.costs.serviceCostUsd)}
+              />
+              {quote.costs.additionalChargesUsd > 0 ? (
+                <ResultRow
+                  label="Tasa de desembolso"
+                  value={formatUsd(quote.costs.additionalChargesUsd)}
+                />
+              ) : null}
+              <ResultRow label="Impuestos estimados" value={formatUsd(quote.costs.taxesTotalUsd)} />
+              <ResultRow
+                label="Total puesto en Argentina (No incluye el valor del producto)"
+                value={formatUsd(quote.costs.totalEstimatedUsd)}
+                highlight
+              />
+            </>
+          )}
         </div>
 
         <div className="result-section">
