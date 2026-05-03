@@ -1,10 +1,15 @@
 import { formatKg, formatM3 } from "./formatters";
 import {
+  AIR_COURIER_AWB_USD,
   AIR_COURIER_CUSTOMS_FUEL_RATE,
   AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A,
   AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS,
+  AIR_COURIER_DISBURSEMENT_BRACKETS,
+  AIR_COURIER_HIGH_SEASON_RATE,
   AIR_COURIER_RATE_TABLE,
+  AIR_COURIER_TAXABLE_SERVICE_VAT_RATE,
   COURIER_MARITIME_CUSTOMS_USD_PER_KG,
+  COURIER_MARITIME_FIXED_USD,
   COURIER_MARITIME_USD_PER_KG,
   COURIER_MAX_FOB_USD,
   COURIER_MAX_UNIT_WEIGHT_KG,
@@ -12,6 +17,7 @@ import {
   INSURANCE_RATE,
   MARITIME_COURIER_KG_PER_M3,
   SHARED_IMPORT_CUSTOMS_USD_PER_M3,
+  SHARED_IMPORT_MIN_BILLABLE_M3,
   SERVICES,
   SHARED_IMPORT_KG_PER_M3,
   SHARED_IMPORT_USD_PER_M3,
@@ -69,7 +75,7 @@ function getAirPricing(applicableWeightKg) {
   if (applicableWeightKg <= 0) {
     return {
       bracket: AIR_COURIER_RATE_TABLE[0],
-      serviceCostUsd: 0,
+      freightSaleUsd: 0,
       usdPerKg: 0,
     };
   }
@@ -78,10 +84,13 @@ function getAirPricing(applicableWeightKg) {
     AIR_COURIER_RATE_TABLE.find((entry) => applicableWeightKg <= entry.maxKg) ??
     AIR_COURIER_RATE_TABLE[AIR_COURIER_RATE_TABLE.length - 1];
 
+  const calculatedUsd = applicableWeightKg * bracket.usdPerKg;
+  const freightSaleUsd = Math.max(calculatedUsd, bracket.minimumUsd ?? 0);
+
   return {
     bracket,
     usdPerKg: bracket.usdPerKg,
-    serviceCostUsd: applicableWeightKg * bracket.usdPerKg,
+    freightSaleUsd,
   };
 }
 
@@ -111,6 +120,14 @@ function getAirCustomsFreightUsd(applicableWeightKg) {
   );
 
   return applicableWeightKg * bracket.usdPerKg;
+}
+
+function getAirDisbursementUsd(taxesTotalUsd) {
+  const bracket =
+    AIR_COURIER_DISBURSEMENT_BRACKETS.find((entry) => taxesTotalUsd < entry.maxTaxesUsd) ??
+    AIR_COURIER_DISBURSEMENT_BRACKETS[AIR_COURIER_DISBURSEMENT_BRACKETS.length - 1];
+
+  return bracket.feeUsd;
 }
 
 export function validateForm(formData, serviceId) {
@@ -185,7 +202,11 @@ export function calculateQuote(serviceId, formData) {
   const maritimeChargeableWeightKg = Math.max(grossWeightKg, maritimeEquivalentWeightKg);
 
   const sharedEquivalentVolumeM3 = grossWeightKg / SHARED_IMPORT_KG_PER_M3;
-  const sharedChargeableVolumeM3 = Math.max(totalVolumeM3, sharedEquivalentVolumeM3);
+  const sharedChargeableVolumeM3 = Math.max(
+    totalVolumeM3,
+    sharedEquivalentVolumeM3,
+    SHARED_IMPORT_MIN_BILLABLE_M3,
+  );
 
   let serviceCostUsd = 0;
   let customsFreightUsd = 0;
@@ -195,7 +216,7 @@ export function calculateQuote(serviceId, formData) {
   };
 
   if (serviceId === "air-courier") {
-    serviceCostUsd = getAirPricing(applicableWeightKg).serviceCostUsd;
+    serviceCostUsd = getAirPricing(applicableWeightKg).freightSaleUsd;
     customsFreightUsd = getAirCustomsFreightUsd(applicableWeightKg);
     calculationBase = {
       label: service.calculationLabel,
@@ -237,7 +258,22 @@ export function calculateQuote(serviceId, formData) {
     additionalVatUsd +
     earningsTaxUsd +
     grossIncomeTaxUsd;
-  const totalEstimatedUsd = serviceCostUsd + insuranceUsd + taxesTotalUsd;
+
+  if (serviceId === "air-courier") {
+    const highSeasonUsd = customsFreightUsd * AIR_COURIER_HIGH_SEASON_RATE;
+    const disbursementUsd = getAirDisbursementUsd(taxesTotalUsd);
+    const taxableServiceBaseUsd = AIR_COURIER_AWB_USD + disbursementUsd;
+    const taxableServiceVatUsd =
+      taxableServiceBaseUsd * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
+
+    serviceCostUsd += highSeasonUsd + AIR_COURIER_AWB_USD + disbursementUsd + taxableServiceVatUsd;
+  }
+
+  if (serviceId === "maritime-courier") {
+    serviceCostUsd += COURIER_MARITIME_FIXED_USD;
+  }
+
+  const totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
 
   const notes = [GLOBAL_NOTES.estimatorDisclaimer, GLOBAL_NOTES.taxDisclaimer];
 
@@ -253,12 +289,14 @@ export function calculateQuote(serviceId, formData) {
 
   if (serviceId === "maritime-courier") {
     notes.push(
-      `En courier maritimo usamos el mayor entre peso bruto y la equivalencia de 1 m3 = ${MARITIME_COURIER_KG_PER_M3} kg.`,
+      `En courier maritimo usamos el mayor entre peso bruto y la equivalencia de 1 m3 = ${MARITIME_COURIER_KG_PER_M3} kg, y sumamos un fijo de USD ${COURIER_MARITIME_FIXED_USD}.`,
     );
   }
 
   if (serviceId === "shared-import") {
-    notes.push("En importacion compartida usamos el mayor entre volumen real y la equivalencia de 1 tonelada = 1 m3.");
+    notes.push(
+      `En importacion compartida usamos el mayor entre volumen real, la equivalencia de 1 tonelada = 1 m3 y un minimo facturable de ${SHARED_IMPORT_MIN_BILLABLE_M3} m3.`,
+    );
   }
 
   if (formData.isTechProduct) {

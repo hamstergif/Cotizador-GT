@@ -1,24 +1,32 @@
 export const WHATSAPP_NUMBER = "5491131411755";
 export const INSURANCE_RATE = 0.01;
 export const COURIER_MARITIME_USD_PER_KG = 10;
+export const COURIER_MARITIME_FIXED_USD = 50;
 export const SHARED_IMPORT_USD_PER_M3 = 450;
+export const SHARED_IMPORT_MIN_BILLABLE_M3 = 1;
 export const AIR_COURIER_CUSTOMS_FUEL_RATE = 0.085;
 export const COURIER_MARITIME_CUSTOMS_USD_PER_KG = 0.5;
 export const SHARED_IMPORT_CUSTOMS_USD_PER_M3 = 50;
+export const AIR_COURIER_AWB_USD = 75;
+export const AIR_COURIER_HIGH_SEASON_RATE = 0.215;
+export const AIR_COURIER_TAXABLE_SERVICE_VAT_RATE = 0.21;
 
 export const COURIER_MAX_FOB_USD = 3000;
 export const COURIER_MAX_UNIT_WEIGHT_KG = 50;
 export const MARITIME_COURIER_KG_PER_M3 = 200;
 export const SHARED_IMPORT_KG_PER_M3 = 1000;
 
-// Reemplaza esta tabla por los valores del Excel real cuando este disponible.
 export const AIR_COURIER_RATE_TABLE = [
-  { label: "Hasta 5 kg", maxKg: 5, usdPerKg: 32 },
-  { label: "Hasta 15 kg", maxKg: 15, usdPerKg: 28 },
-  { label: "Hasta 30 kg", maxKg: 30, usdPerKg: 24 },
-  { label: "Hasta 70 kg", maxKg: 70, usdPerKg: 21 },
-  { label: "Hasta 150 kg", maxKg: 150, usdPerKg: 18.5 },
-  { label: "Mas de 150 kg", maxKg: Number.POSITIVE_INFINITY, usdPerKg: 17 },
+  { label: "Hasta 5 kg", maxKg: 5, usdPerKg: 45, minimumUsd: 0 },
+  { label: "Hasta 10 kg", maxKg: 10, usdPerKg: 28, minimumUsd: 225 },
+  { label: "Hasta 20 kg", maxKg: 20, usdPerKg: 20, minimumUsd: 280 },
+  { label: "Hasta 30 kg", maxKg: 30, usdPerKg: 18, minimumUsd: 400 },
+  { label: "Hasta 50 kg", maxKg: 50, usdPerKg: 12.8, minimumUsd: 540 },
+  { label: "Hasta 70 kg", maxKg: 70, usdPerKg: 12.6, minimumUsd: 640 },
+  { label: "Hasta 100 kg", maxKg: 100, usdPerKg: 12.5, minimumUsd: 882 },
+  { label: "Hasta 150 kg", maxKg: 150, usdPerKg: 12.3, minimumUsd: 1250 },
+  { label: "Hasta 300 kg", maxKg: 300, usdPerKg: 12, minimumUsd: 1845 },
+  { label: "Mas de 300 kg", maxKg: Number.POSITIVE_INFINITY, usdPerKg: 0, minimumUsd: 0 },
 ];
 
 export const AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A = [
@@ -74,6 +82,18 @@ export const AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS = [
   { fromKg: 300, usdPerKg: 9.49 },
   { fromKg: 500, usdPerKg: 9.41 },
   { fromKg: 1000, usdPerKg: 9.3 },
+];
+
+export const AIR_COURIER_DISBURSEMENT_BRACKETS = [
+  { maxTaxesUsd: 5, feeUsd: 0 },
+  { maxTaxesUsd: 10, feeUsd: 36 },
+  { maxTaxesUsd: 20, feeUsd: 50 },
+  { maxTaxesUsd: 50, feeUsd: 58 },
+  { maxTaxesUsd: 100, feeUsd: 65 },
+  { maxTaxesUsd: 400, feeUsd: 72 },
+  { maxTaxesUsd: 800, feeUsd: 84 },
+  { maxTaxesUsd: 1000, feeUsd: 96 },
+  { maxTaxesUsd: Number.POSITIVE_INFINITY, feeUsd: 120 },
 ];
 
 const COURIER_STANDARD_TAXES = {

@@ -61,8 +61,8 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         </div>
 
         <p className="result-card__footnote">
-          El total estimado en USD incluye servicio, seguro e impuestos estimados. No incluye
-          el valor del producto (FOB).
+          El seguro estimado se usa para calcular el CIF. El total puesto en Argentina incluye
+          servicio e impuestos estimados, y no incluye el valor del producto (FOB).
         </p>
 
         <div className="result-section">
