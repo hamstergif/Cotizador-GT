@@ -61,8 +61,8 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         </div>
 
         <p className="result-card__footnote">
-          El seguro estimado se usa para calcular el CIF. El total puesto en Argentina incluye
-          servicio e impuestos estimados, y no incluye el valor del producto (FOB).
+          El seguro estimado se usa de forma interna para calcular el CIF. El total puesto en
+          Argentina no incluye el valor del producto.
         </p>
 
         <div className="result-section">
@@ -118,16 +118,21 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         </div>
 
         <div className="result-section">
-          <h3>Resumen comercial</h3>
-          <ResultRow label="FOB" value={formatUsd(quote.costs.fobUsd)} />
+          <h3>Resumen de costos</h3>
+          <ResultRow label="Valor del producto (FOB)" value={formatUsd(quote.costs.fobUsd)} />
           <ResultRow
             label="Costo logistico / servicio"
             value={formatUsd(quote.costs.serviceCostUsd)}
           />
-          <ResultRow label="Seguro estimado para CIF" value={formatUsd(quote.costs.insuranceUsd)} />
+          {quote.costs.additionalChargesUsd > 0 ? (
+            <ResultRow
+              label="Tasa de desembolso"
+              value={formatUsd(quote.costs.additionalChargesUsd)}
+            />
+          ) : null}
           <ResultRow label="Impuestos estimados" value={formatUsd(quote.costs.taxesTotalUsd)} />
           <ResultRow
-            label="Total puesto en Argentina (sin producto)"
+            label="Total puesto en Argentina (No incluye el valor del producto)"
             value={formatUsd(quote.costs.totalEstimatedUsd)}
             highlight
           />

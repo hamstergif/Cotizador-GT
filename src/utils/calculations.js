@@ -5,7 +5,6 @@ import {
   AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A,
   AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS,
   AIR_COURIER_DISBURSEMENT_BRACKETS,
-  AIR_COURIER_HIGH_SEASON_RATE,
   AIR_COURIER_RATE_TABLE,
   AIR_COURIER_TAXABLE_SERVICE_VAT_RATE,
   COURIER_MARITIME_CUSTOMS_USD_PER_KG,
@@ -209,6 +208,7 @@ export function calculateQuote(serviceId, formData) {
   );
 
   let serviceCostUsd = 0;
+  let additionalChargesUsd = 0;
   let customsFreightUsd = 0;
   let calculationBase = {
     label: service.calculationLabel,
@@ -260,20 +260,19 @@ export function calculateQuote(serviceId, formData) {
     grossIncomeTaxUsd;
 
   if (serviceId === "air-courier") {
-    const highSeasonUsd = customsFreightUsd * AIR_COURIER_HIGH_SEASON_RATE;
     const disbursementUsd = getAirDisbursementUsd(taxesTotalUsd);
-    const taxableServiceBaseUsd = AIR_COURIER_AWB_USD + disbursementUsd;
-    const taxableServiceVatUsd =
-      taxableServiceBaseUsd * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
+    const awbVatUsd = AIR_COURIER_AWB_USD * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
+    const disbursementVatUsd = disbursementUsd * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
 
-    serviceCostUsd += highSeasonUsd + AIR_COURIER_AWB_USD + disbursementUsd + taxableServiceVatUsd;
+    serviceCostUsd += AIR_COURIER_AWB_USD + awbVatUsd;
+    additionalChargesUsd = disbursementUsd + disbursementVatUsd;
   }
 
   if (serviceId === "maritime-courier") {
     serviceCostUsd += COURIER_MARITIME_FIXED_USD;
   }
 
-  const totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
+  const totalEstimatedUsd = serviceCostUsd + additionalChargesUsd + taxesTotalUsd;
 
   const notes = [GLOBAL_NOTES.estimatorDisclaimer, GLOBAL_NOTES.taxDisclaimer];
 
@@ -329,6 +328,7 @@ export function calculateQuote(serviceId, formData) {
     costs: {
       fobUsd,
       serviceCostUsd,
+      additionalChargesUsd,
       customsFreightUsd,
       insuranceUsd,
       cifUsd,

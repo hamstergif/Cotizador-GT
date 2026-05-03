@@ -84,6 +84,9 @@ export function buildWhatsAppMessage(formData, quote) {
   messageLines.push("Estimacion generada:");
   messageLines.push(`Tiempo estimado: ${quote.service.etaLabel}`);
   messageLines.push(`Costo servicio: ${formatUsd(quote.costs.serviceCostUsd)}`);
+  if (quote.costs.additionalChargesUsd > 0) {
+    messageLines.push(`Tasa de desembolso: ${formatUsd(quote.costs.additionalChargesUsd)}`);
+  }
   messageLines.push(`Seguro estimado para CIF: ${formatUsd(quote.costs.insuranceUsd)}`);
   messageLines.push(`CIF: ${formatUsd(quote.costs.cifUsd)}`);
   messageLines.push(`Derechos de importacion: ${formatUsd(quote.taxes.importDutyUsd)}`);
@@ -99,7 +102,7 @@ export function buildWhatsAppMessage(formData, quote) {
 
   messageLines.push(`Impuestos estimados: ${formatUsd(quote.costs.taxesTotalUsd)}`);
   messageLines.push(
-    `Total estimado puesto en Argentina (sin producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
+    `Total puesto en Argentina (No incluye el valor del producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
   );
   messageLines.push(
     "Aclaracion total: el seguro se usa para el CIF y el total no incluye el valor del producto (FOB).",
