@@ -1,33 +1,41 @@
+import { formatKg, formatM3 } from "./formatters";
 import {
   AIR_COURIER_RATE_TABLE,
   COURIER_MARITIME_USD_PER_KG,
+  COURIER_MAX_FOB_USD,
+  COURIER_MAX_UNIT_WEIGHT_KG,
   GLOBAL_NOTES,
   INSURANCE_RATE,
+  MARITIME_COURIER_KG_PER_M3,
   SERVICES,
+  SHARED_IMPORT_KG_PER_M3,
   SHARED_IMPORT_USD_PER_M3,
   TAX_PROFILES,
 } from "./rates";
-import { formatKg, formatM3 } from "./formatters";
 
 const REQUIRED_TEXT_FIELDS = {
-  fullName: "Ingresá tu nombre.",
-  whatsapp: "Ingresá un WhatsApp de contacto.",
-  product: "Indicá el producto a importar.",
-  originCountry: "Indicá el país de origen.",
-  destinationArgentina: "Indicá el destino en Argentina.",
+  fullName: "Ingresa tu nombre.",
+  whatsapp: "Ingresa un WhatsApp de contacto.",
+  product: "Indica el producto a importar.",
+  originCountry: "Indica el pais de origen.",
+  destinationArgentina: "Indica el destino en Argentina.",
 };
 
 const REQUIRED_NUMERIC_FIELDS = {
-  fobUsd: "Ingresá un FOB mayor a 0.",
-  packageCount: "Ingresá una cantidad de bultos mayor a 0.",
-  grossWeightKg: "Ingresá un peso bruto mayor a 0.",
-  lengthCm: "Ingresá un largo mayor a 0.",
-  widthCm: "Ingresá un ancho mayor a 0.",
-  heightCm: "Ingresá un alto mayor a 0.",
+  fobUsd: "Ingresa un FOB mayor a 0.",
+  packageCount: "Ingresa una cantidad de bultos mayor a 0.",
+  grossWeightKg: "Ingresa un peso bruto mayor a 0.",
+  lengthCm: "Ingresa un largo mayor a 0.",
+  widthCm: "Ingresa un ancho mayor a 0.",
+  heightCm: "Ingresa un alto mayor a 0.",
 };
 
 function hasText(value) {
   return String(value ?? "").trim().length > 0;
+}
+
+function isCourierService(serviceId) {
+  return serviceId === "air-courier" || serviceId === "maritime-courier";
 }
 
 export function toNumber(value) {
@@ -72,8 +80,9 @@ function getAirPricing(applicableWeightKg) {
   };
 }
 
-export function validateForm(formData) {
+export function validateForm(formData, serviceId) {
   const errors = {};
+  const service = getServiceById(serviceId);
 
   Object.entries(REQUIRED_TEXT_FIELDS).forEach(([field, message]) => {
     if (!hasText(formData[field])) {
@@ -87,15 +96,34 @@ export function validateForm(formData) {
     }
   });
 
-  if (hasText(formData.packageCount) && !Number.isInteger(toNumber(formData.packageCount))) {
-    errors.packageCount = "La cantidad de bultos debe ser un número entero.";
+  const packageCount = toNumber(formData.packageCount);
+  const grossWeightKg = toNumber(formData.grossWeightKg);
+  const fobUsd = toNumber(formData.fobUsd);
+
+  if (hasText(formData.packageCount) && !Number.isInteger(packageCount)) {
+    errors.packageCount = "La cantidad de bultos debe ser un numero entero.";
   }
 
   if (hasText(formData.email)) {
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(formData.email).trim());
 
     if (!isValidEmail) {
-      errors.email = "Ingresá un email válido o dejalo vacío.";
+      errors.email = "Ingresa un email valido o dejalo vacio.";
+    }
+  }
+
+  if (isCourierService(serviceId)) {
+    if (fobUsd > COURIER_MAX_FOB_USD) {
+      errors.fobUsd = `Para ${service.title} el FOB total no puede superar USD ${COURIER_MAX_FOB_USD}.`;
+    }
+
+    if (packageCount > 0 && grossWeightKg > 0) {
+      const averageUnitWeightKg = grossWeightKg / packageCount;
+
+      if (averageUnitWeightKg > COURIER_MAX_UNIT_WEIGHT_KG) {
+        errors.grossWeightKg =
+          `Para ${service.title} el peso promedio por bulto no puede superar ${COURIER_MAX_UNIT_WEIGHT_KG} kg.`;
+      }
     }
   }
 
@@ -105,7 +133,7 @@ export function validateForm(formData) {
 export function calculateQuote(serviceId, formData) {
   const service = getServiceById(serviceId);
   const taxProfile = getTaxProfile(serviceId, formData.isTechProduct);
-  const validationErrors = validateForm(formData);
+  const validationErrors = validateForm(formData, serviceId);
 
   const packageCount = toNumber(formData.packageCount);
   const grossWeightKg = toNumber(formData.grossWeightKg);
@@ -118,6 +146,13 @@ export function calculateQuote(serviceId, formData) {
   const totalVolumeM3 = volumePerPackageM3 * packageCount;
   const volumetricWeightKg = ((lengthCm * widthCm * heightCm) / 5000) * packageCount;
   const applicableWeightKg = Math.max(grossWeightKg, volumetricWeightKg);
+  const averageUnitWeightKg = packageCount > 0 ? grossWeightKg / packageCount : 0;
+
+  const maritimeEquivalentWeightKg = totalVolumeM3 * MARITIME_COURIER_KG_PER_M3;
+  const maritimeChargeableWeightKg = Math.max(grossWeightKg, maritimeEquivalentWeightKg);
+
+  const sharedEquivalentVolumeM3 = grossWeightKg / SHARED_IMPORT_KG_PER_M3;
+  const sharedChargeableVolumeM3 = Math.max(totalVolumeM3, sharedEquivalentVolumeM3);
 
   let serviceCostUsd = 0;
   let calculationBase = {
@@ -134,18 +169,18 @@ export function calculateQuote(serviceId, formData) {
   }
 
   if (serviceId === "maritime-courier") {
-    serviceCostUsd = grossWeightKg * COURIER_MARITIME_USD_PER_KG;
+    serviceCostUsd = maritimeChargeableWeightKg * COURIER_MARITIME_USD_PER_KG;
     calculationBase = {
       label: service.calculationLabel,
-      displayValue: formatKg(grossWeightKg),
+      displayValue: formatKg(maritimeChargeableWeightKg),
     };
   }
 
   if (serviceId === "shared-import") {
-    serviceCostUsd = totalVolumeM3 * SHARED_IMPORT_USD_PER_M3;
+    serviceCostUsd = sharedChargeableVolumeM3 * SHARED_IMPORT_USD_PER_M3;
     calculationBase = {
       label: service.calculationLabel,
-      displayValue: formatM3(totalVolumeM3),
+      displayValue: formatM3(sharedChargeableVolumeM3),
     };
   }
 
@@ -169,12 +204,32 @@ export function calculateQuote(serviceId, formData) {
 
   const notes = [GLOBAL_NOTES.estimatorDisclaimer, GLOBAL_NOTES.taxDisclaimer];
 
+  if (isCourierService(serviceId)) {
+    notes.push(
+      `Para courier, el FOB total permitido es hasta USD ${COURIER_MAX_FOB_USD} y cada bulto no debe superar ${COURIER_MAX_UNIT_WEIGHT_KG} kg unitarios.`,
+    );
+  }
+
+  if (serviceId === "air-courier") {
+    notes.push("En courier aereo usamos el mayor entre peso real y peso volumetrico.");
+  }
+
+  if (serviceId === "maritime-courier") {
+    notes.push(
+      `En courier maritimo usamos el mayor entre peso bruto y la equivalencia de 1 m3 = ${MARITIME_COURIER_KG_PER_M3} kg.`,
+    );
+  }
+
+  if (serviceId === "shared-import") {
+    notes.push("En importacion compartida usamos el mayor entre volumen real y la equivalencia de 1 tonelada = 1 m3.");
+  }
+
   if (formData.isTechProduct) {
     notes.push(GLOBAL_NOTES.techDisclaimer);
   }
 
   if (formData.hasEstimatedData) {
-    notes.push("La simulación incluye datos estimados informados por el cliente.");
+    notes.push("La simulacion incluye datos estimados informados por el cliente.");
   }
 
   return {
@@ -185,11 +240,16 @@ export function calculateQuote(serviceId, formData) {
     volumes: {
       volumePerPackageM3,
       totalVolumeM3,
+      sharedEquivalentVolumeM3,
+      sharedChargeableVolumeM3,
     },
     weights: {
       grossWeightKg,
+      averageUnitWeightKg,
       volumetricWeightKg,
       applicableWeightKg,
+      maritimeEquivalentWeightKg,
+      maritimeChargeableWeightKg,
     },
     costs: {
       fobUsd,

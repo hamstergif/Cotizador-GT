@@ -114,36 +114,51 @@ button {
 
 .hero__brand {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 
-.hero__logo {
-  display: block;
-  object-fit: contain;
-}
-
-.hero__brand--stacked {
+.hero__brand--lockup {
   display: grid;
   justify-items: start;
-  gap: 10px;
+  gap: 16px;
 }
 
-.hero__logo--wordmark {
-  width: min(100%, 360px);
+.hero__symbol {
+  display: block;
+  width: min(48vw, 220px);
   height: auto;
-  max-height: 132px;
-  padding: 0;
   filter: drop-shadow(0 16px 32px rgba(7, 32, 54, 0.14));
 }
 
-.hero__logo:not(.hero__logo--wordmark) {
-  width: 60px;
-  height: 60px;
-  padding: 10px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.hero__wordmark {
+  display: grid;
+  gap: 12px;
+}
+
+.hero__wordmark-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(3rem, 11vw, 6rem);
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+
+.hero__wordmark-divider {
+  width: min(100%, 430px);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.hero__wordmark-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(0.88rem, 3vw, 1.28rem);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
 }
 
 .hero__eyebrow,
@@ -167,8 +182,8 @@ button {
 }
 
 .hero__content {
-  margin-top: 26px;
-  max-width: 680px;
+  margin-top: 32px;
+  max-width: 740px;
 }
 
 .hero__badge {
@@ -344,6 +359,13 @@ button {
   color: var(--brand-strong);
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+.service-rule {
+  margin: 14px 0 0;
+  color: var(--brand-strong);
+  font-size: 0.93rem;
+  line-height: 1.58;
 }
 
 .quote-form {
@@ -708,6 +730,16 @@ button {
 }
 
 @media (min-width: 980px) {
+  .hero__brand--lockup {
+    grid-template-columns: auto 1fr;
+    align-items: end;
+    column-gap: 22px;
+  }
+
+  .hero__symbol {
+    width: 180px;
+  }
+
   .workspace {
     grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
   }

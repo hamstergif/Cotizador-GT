@@ -1,3 +1,10 @@
+import {
+  COURIER_MAX_FOB_USD,
+  COURIER_MAX_UNIT_WEIGHT_KG,
+  MARITIME_COURIER_KG_PER_M3,
+  SHARED_IMPORT_KG_PER_M3,
+} from "../utils/rates";
+
 function InputField({
   field,
   label,
@@ -68,29 +75,53 @@ function CheckboxField({ field, label, helper, checked, onChange }) {
 
 function QuoteForm({ service, formData, errors, onFieldChange }) {
   const hasErrors = Object.keys(errors).length > 0;
+  const isCourierService =
+    service.id === "air-courier" || service.id === "maritime-courier";
 
   return (
     <section className="form-panel">
       <div className="surface-card form-intro">
         <div>
           <p className="section-kicker">Paso 1</p>
-          <h2>Completá los datos de tu operación</h2>
+          <h2>Completa los datos de tu operacion</h2>
         </div>
         <p>
           {service.description} Los valores son orientativos y el equipo de Global Trip
-          valida cada caso antes de confirmar una cotización.
+          valida cada caso antes de confirmar una cotizacion.
         </p>
         <div className="service-pill-row">
           <span className="service-pill">Tiempo estimado: {service.etaLabel}</span>
           <span className="service-pill">Moneda: USD</span>
         </div>
+
+        {isCourierService ? (
+          <p className="service-rule">
+            Para courier, el FOB total no puede superar USD {COURIER_MAX_FOB_USD} y el peso
+            promedio por bulto no puede superar {COURIER_MAX_UNIT_WEIGHT_KG} kg. Si algun
+            bulto unitario supera ese limite, consultanos antes de avanzar.
+          </p>
+        ) : null}
+
+        {service.id === "maritime-courier" ? (
+          <p className="service-rule">
+            En courier maritimo usamos la equivalencia 1 m3 = {MARITIME_COURIER_KG_PER_M3} kg
+            para calcular el servicio.
+          </p>
+        ) : null}
+
+        {service.id === "shared-import" ? (
+          <p className="service-rule">
+            En importacion compartida usamos la equivalencia 1 tonelada ={" "}
+            {SHARED_IMPORT_KG_PER_M3} kg = 1 m3 para definir la base de calculo.
+          </p>
+        ) : null}
       </div>
 
       <form className="quote-form" onSubmit={(event) => event.preventDefault()}>
         {hasErrors ? (
           <div className="inline-alert">
-            Revisá los campos marcados para poder copiar el resumen o enviar la consulta por
-            WhatsApp.
+            Revisa los campos marcados y los limites del servicio para poder copiar el
+            resumen o enviar la consulta por WhatsApp.
           </div>
         ) : null}
 
@@ -104,7 +135,7 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
               value={formData.fullName}
               onChange={onFieldChange}
               error={errors.fullName}
-              placeholder="Ej: Juan Pérez"
+              placeholder="Ej: Juan Perez"
             />
             <InputField
               field="company"
@@ -137,7 +168,7 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
         </fieldset>
 
         <fieldset className="surface-card form-section">
-          <legend>Datos de la operación</legend>
+          <legend>Datos de la operacion</legend>
           <div className="form-grid">
             <InputField
               field="product"
@@ -146,11 +177,11 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
               value={formData.product}
               onChange={onFieldChange}
               error={errors.product}
-              placeholder="Ej: Repuestos electrónicos"
+              placeholder="Ej: Repuestos electronicos"
             />
             <InputField
               field="originCountry"
-              label="País de origen"
+              label="Pais de origen"
               required
               value={formData.originCountry}
               onChange={onFieldChange}
@@ -164,7 +195,7 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
               onChange={onFieldChange}
               error={errors.originCityOrSupplier}
               placeholder="Opcional"
-              helper="Podés indicar ciudad, proveedor o ambos."
+              helper="Podes indicar ciudad, proveedor o ambos."
             />
             <InputField
               field="destinationArgentina"
@@ -200,7 +231,7 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
         </fieldset>
 
         <fieldset className="surface-card form-section">
-          <legend>Datos logísticos</legend>
+          <legend>Datos logisticos</legend>
           <div className="form-grid form-grid--two">
             <InputField
               field="packageCount"
@@ -265,15 +296,15 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
           </div>
 
           <p className="section-helper">
-            Usamos una sola línea de medidas promedio por bulto. Si no conocés un dato
-            exacto, podés cargar un estimado y marcarlo debajo.
+            Usamos una sola linea de medidas promedio por bulto. Si no conoces un dato
+            exacto, podes cargar un estimado y marcarlo debajo.
           </p>
 
           <div className="checkbox-stack">
             <CheckboxField
               field="isTechProduct"
-              label="Mi producto es tecnológico o bien de capital"
-              helper="Seleccioná esta opción solo si tu producto puede aplicar a una reducción impositiva. Global Trip validará la clasificación antes de confirmar la cotización."
+              label="Mi producto es tecnologico o bien de capital"
+              helper="Selecciona esta opcion solo si tu producto puede aplicar a una reduccion impositiva. Global Trip validara la clasificacion antes de confirmar la cotizacion."
               checked={formData.isTechProduct}
               onChange={onFieldChange}
             />
@@ -281,7 +312,7 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
             <CheckboxField
               field="hasEstimatedData"
               label="Estoy cargando datos estimados"
-              helper="Usá esta opción si alguno de los datos aún no es exacto. El resumen lo va a dejar aclarado."
+              helper="Usa esta opcion si alguno de los datos aun no es exacto. El resumen lo va a dejar aclarado."
               checked={formData.hasEstimatedData}
               onChange={onFieldChange}
             />
@@ -296,8 +327,8 @@ function QuoteForm({ service, formData, errors, onFieldChange }) {
             value={formData.observations}
             onChange={onFieldChange}
             error={errors.observations}
-            placeholder="Podés sumar aclaraciones de producto, proveedor, documentación o datos a validar."
-            helper="Si algún dato es aproximado, también podés detallarlo acá."
+            placeholder="Podes sumar aclaraciones de producto, proveedor, documentacion o datos a validar."
+            helper="Si algun dato es aproximado, tambien podes detallarlo aca."
           />
         </fieldset>
       </form>

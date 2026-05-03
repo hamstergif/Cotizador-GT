@@ -29,17 +29,17 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         <div className="result-card__header">
           <div>
             <p className="section-kicker">Paso 2</p>
-            <h2>Estimación orientativa</h2>
+            <h2>Estimacion orientativa</h2>
           </div>
           <span className={`status-chip ${quote.isReady ? "status-chip--ready" : ""}`}>
-            {quote.isReady ? "Lista para enviar" : "Faltan datos obligatorios"}
+            {quote.isReady ? "Lista para enviar" : "Revisar datos y limites"}
           </span>
         </div>
 
         <p className="result-card__lead">
           {quote.isReady
-            ? "Ya podés copiar el resumen o enviarlo por WhatsApp para que Global Trip revise la operación."
-            : "Mientras completás el formulario, la estimación se actualiza en tiempo real."}
+            ? "Ya podes copiar el resumen o enviarlo por WhatsApp para que Global Trip revise la operacion."
+            : "Mientras completas el formulario, la estimacion se actualiza en tiempo real."}
         </p>
 
         <div className="metric-grid">
@@ -62,16 +62,18 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         </div>
 
         <div className="result-section">
-          <h3>Datos logísticos usados</h3>
+          <h3>Datos logisticos usados</h3>
+          <ResultRow label="Peso bruto total" value={formatKg(quote.weights.grossWeightKg)} />
           <ResultRow
-            label={quote.service.id === "air-courier" ? "Peso real" : "Peso bruto"}
-            value={formatKg(quote.weights.grossWeightKg)}
+            label="Peso promedio por bulto"
+            value={formatKg(quote.weights.averageUnitWeightKg)}
           />
           <ResultRow label="Volumen total" value={formatM3(quote.volumes.totalVolumeM3)} />
+
           {quote.service.id === "air-courier" ? (
             <>
               <ResultRow
-                label="Peso volumétrico"
+                label="Peso volumetrico"
                 value={formatKg(quote.weights.volumetricWeightKg)}
               />
               <ResultRow
@@ -80,6 +82,33 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
               />
             </>
           ) : null}
+
+          {quote.service.id === "maritime-courier" ? (
+            <>
+              <ResultRow
+                label="Peso equivalente por volumen (1 m3 = 200 kg)"
+                value={formatKg(quote.weights.maritimeEquivalentWeightKg)}
+              />
+              <ResultRow
+                label="Peso de calculo maritimo"
+                value={formatKg(quote.weights.maritimeChargeableWeightKg)}
+              />
+            </>
+          ) : null}
+
+          {quote.service.id === "shared-import" ? (
+            <>
+              <ResultRow
+                label="Volumen equivalente por peso (1 tn = 1 m3)"
+                value={formatM3(quote.volumes.sharedEquivalentVolumeM3)}
+              />
+              <ResultRow
+                label="Base de calculo compartida"
+                value={formatM3(quote.volumes.sharedChargeableVolumeM3)}
+              />
+            </>
+          ) : null}
+
           <ResultRow
             label="Medidas por bulto"
             value={formatDimensions(formData.lengthCm, formData.widthCm, formData.heightCm)}
@@ -90,7 +119,7 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
           <h3>Desglose estimado</h3>
           <ResultRow label="FOB" value={formatUsd(quote.costs.fobUsd)} />
           <ResultRow
-            label="Costo logístico / servicio"
+            label="Costo logistico / servicio"
             value={formatUsd(quote.costs.serviceCostUsd)}
           />
           <ResultRow label="Seguro estimado" value={formatUsd(quote.costs.insuranceUsd)} />
@@ -101,11 +130,11 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         <div className="result-section">
           <h3>Impuestos estimados</h3>
           <ResultRow
-            label={`Derechos de importación (${formatPercent(quote.taxProfile.importDuty)})`}
+            label={`Derechos de importacion (${formatPercent(quote.taxProfile.importDuty)})`}
             value={formatUsd(quote.taxes.importDutyUsd)}
           />
           <ResultRow
-            label={`Tasa de estadística (${formatPercent(quote.taxProfile.statisticsRate)})`}
+            label={`Tasa de estadistica (${formatPercent(quote.taxProfile.statisticsRate)})`}
             value={formatUsd(quote.taxes.statisticsUsd)}
           />
           <ResultRow

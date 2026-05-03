@@ -44,7 +44,7 @@ function App() {
       const nextData = { ...previousData, [field]: value };
 
       if (Object.keys(errors).length > 0) {
-        setErrors(validateForm(nextData));
+        setErrors(validateForm(nextData, selectedService));
       }
 
       return nextData;
@@ -53,10 +53,11 @@ function App() {
 
   const handleServiceChange = (serviceId) => {
     setSelectedService(serviceId);
+    setErrors(validateForm(formData, serviceId));
   };
 
   const ensureValidForm = () => {
-    const nextErrors = validateForm(formData);
+    const nextErrors = validateForm(formData, selectedService);
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };

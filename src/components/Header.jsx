@@ -2,44 +2,34 @@ import { useState } from "react";
 import logoFallback from "../assets/logo-fallback.svg";
 
 function Header() {
-  const [logoSource, setLogoSource] = useState("/logo-global-trip-wordmark.png");
+  const [logoSource, setLogoSource] = useState("/logo-global-trip-box.png");
 
   return (
     <header className="hero">
       <div className="hero__panel">
-        <div className="hero__brand hero__brand--stacked">
+        <div className="hero__brand hero__brand--lockup">
           <img
-            className="hero__logo hero__logo--wordmark"
+            className="hero__symbol"
             src={logoSource}
             alt="Global Trip"
             onError={() => setLogoSource(logoFallback)}
           />
-          <p className="hero__microcopy">Comercio exterior y logistica internacional</p>
+
+          <div className="hero__wordmark">
+            <p className="hero__wordmark-title">GlobalTrip</p>
+            <span className="hero__wordmark-divider" />
+            <p className="hero__wordmark-subtitle">COMERCIO EXTERIOR</p>
+          </div>
         </div>
 
         <div className="hero__content">
           <span className="hero__badge">Estimacion orientativa en USD</span>
-          <h1 className="hero__title">Cotiza tu operacion de comercio exterior</h1>
+          <h1 className="hero__title">Cotiza tu importacion</h1>
           <p className="hero__subtitle">
             Completa los datos de tu carga y recibi una estimacion orientativa. Si te
             interesa avanzar, envianos la consulta por WhatsApp y nuestro equipo revisa tu
             operacion.
           </p>
-
-          <div className="hero__signals">
-            <div className="hero__signal">
-              <strong>3 modalidades</strong>
-              <span>Courier aereo, courier maritimo e importacion compartida.</span>
-            </div>
-            <div className="hero__signal">
-              <strong>Flujo simple</strong>
-              <span>Sin login, sin guardado y con cierre directo por WhatsApp.</span>
-            </div>
-            <div className="hero__signal">
-              <strong>Lenguaje claro</strong>
-              <span>Costos e impuestos separados para que la lectura sea inmediata.</span>
-            </div>
-          </div>
         </div>
       </div>
     </header>
