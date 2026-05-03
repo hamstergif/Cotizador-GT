@@ -6,6 +6,10 @@ export const SHARED_IMPORT_USD_PER_M3 = 450;
 export const SHARED_IMPORT_MIN_BILLABLE_M3 = 1;
 export const COURIER_MARITIME_CUSTOMS_USD_PER_KG = 0.5;
 export const SHARED_IMPORT_CUSTOMS_USD_PER_M3 = 50;
+export const AIR_COURIER_AWB_USD = 75;
+export const AIR_COURIER_DESTINATION_DELIVERY_USD = 0;
+export const AIR_COURIER_CUSTOMS_FREIGHT_FOB_RATE = 0.3;
+export const AIR_COURIER_TAXABLE_SERVICE_VAT_RATE = 0.21;
 
 export const COURIER_MAX_FOB_USD = 3000;
 export const COURIER_MAX_UNIT_WEIGHT_KG = 50;
@@ -67,6 +71,18 @@ export const TARIFAS_COURIER_FEDEX = [
     costoUsdKg: 9.83,
     ventaUsdKg: 12,
   },
+];
+
+export const AIR_COURIER_DISBURSEMENT_BRACKETS = [
+  { maxTaxesUsd: 5, feeUsd: 0 },
+  { maxTaxesUsd: 10, feeUsd: 36 },
+  { maxTaxesUsd: 20, feeUsd: 50 },
+  { maxTaxesUsd: 50, feeUsd: 58 },
+  { maxTaxesUsd: 100, feeUsd: 65 },
+  { maxTaxesUsd: 400, feeUsd: 72 },
+  { maxTaxesUsd: 800, feeUsd: 84 },
+  { maxTaxesUsd: 1000, feeUsd: 96 },
+  { maxTaxesUsd: Number.POSITIVE_INFINITY, feeUsd: 120 },
 ];
 
 const COURIER_STANDARD_TAXES = {

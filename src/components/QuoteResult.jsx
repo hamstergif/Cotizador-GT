@@ -130,6 +130,36 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
               label="Resultado"
               value={quote.manualQuoteMessage ?? "A cotizar manualmente"}
             />
+          ) : quote.service.id === "air-courier" ? (
+            <>
+              <ResultRow
+                label="Flete internacional"
+                value={formatUsd(quote.costs.serviceCostUsd)}
+              />
+              {quote.costs.additionalChargesUsd > 0 ? (
+                <ResultRow
+                  label="Recargo temporada alta"
+                  value={formatUsd(quote.costs.additionalChargesUsd)}
+                />
+              ) : null}
+              <ResultRow
+                label="Impuestos aduaneros"
+                value={formatUsd(quote.costs.taxesTotalUsd)}
+              />
+              <ResultRow
+                label="Gastos gravados"
+                value={formatUsd(quote.costs.taxableChargesSubtotalUsd)}
+              />
+              <ResultRow
+                label="IVA gastos gravados"
+                value={formatUsd(quote.costs.taxableChargesVatUsd)}
+              />
+              <ResultRow
+                label="Total final IVA incluido (No incluye el valor del producto)"
+                value={formatUsd(quote.costs.totalEstimatedUsd)}
+                highlight
+              />
+            </>
           ) : (
             <>
               <ResultRow

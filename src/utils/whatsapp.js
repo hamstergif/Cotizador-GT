@@ -85,6 +85,23 @@ export function buildWhatsAppMessage(formData, quote) {
   messageLines.push(`Tiempo estimado: ${quote.service.etaLabel}`);
   if (quote.requiresManualQuote) {
     messageLines.push(`Resultado: ${quote.manualQuoteMessage ?? "A cotizar manualmente"}`);
+  } else if (quote.service.id === "air-courier") {
+    messageLines.push(`Flete internacional: ${formatUsd(quote.costs.serviceCostUsd)}`);
+    messageLines.push(`Flete aduanero: ${formatUsd(quote.costs.customsFreightUsd)}`);
+    messageLines.push(`Seguro: ${formatUsd(quote.costs.insuranceUsd)}`);
+    messageLines.push(`CIF: ${formatUsd(quote.costs.cifUsd)}`);
+    messageLines.push(`Derechos de importacion: ${formatUsd(quote.taxes.importDutyUsd)}`);
+    messageLines.push(`Tasa de estadistica: ${formatUsd(quote.taxes.statisticsUsd)}`);
+    messageLines.push(`IVA aduanero: ${formatUsd(quote.taxes.vatUsd)}`);
+    messageLines.push(`Impuestos aduaneros: ${formatUsd(quote.costs.taxesTotalUsd)}`);
+    if (quote.costs.additionalChargesUsd > 0) {
+      messageLines.push(`Recargo temporada alta: ${formatUsd(quote.costs.additionalChargesUsd)}`);
+    }
+    messageLines.push(`Gastos gravados: ${formatUsd(quote.costs.taxableChargesSubtotalUsd)}`);
+    messageLines.push(`IVA gastos gravados: ${formatUsd(quote.costs.taxableChargesVatUsd)}`);
+    messageLines.push(
+      `Total final IVA incluido (No incluye el valor del producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
+    );
   } else {
     messageLines.push(`Costo servicio: ${formatUsd(quote.costs.serviceCostUsd)}`);
     if (quote.costs.additionalChargesUsd > 0) {

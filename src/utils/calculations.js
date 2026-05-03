@@ -1,5 +1,10 @@
-import { formatKg, formatM3 } from "./formatters";
+import { formatKg, formatM3 } from "./formatters.js";
 import {
+  AIR_COURIER_AWB_USD,
+  AIR_COURIER_CUSTOMS_FREIGHT_FOB_RATE,
+  AIR_COURIER_DESTINATION_DELIVERY_USD,
+  AIR_COURIER_DISBURSEMENT_BRACKETS,
+  AIR_COURIER_TAXABLE_SERVICE_VAT_RATE,
   COURIER_MARITIME_CUSTOMS_USD_PER_KG,
   COURIER_MARITIME_FIXED_USD,
   COURIER_MARITIME_USD_PER_KG,
@@ -15,7 +20,7 @@ import {
   SHARED_IMPORT_USD_PER_M3,
   TARIFAS_COURIER_FEDEX,
   TAX_PROFILES,
-} from "./rates";
+} from "./rates.js";
 
 const REQUIRED_TEXT_FIELDS = {
   fullName: "Ingresa tu nombre.",
@@ -182,6 +187,14 @@ function getTaxProfile(serviceId, isTechProduct) {
   return isTechProduct ? TAX_PROFILES.reduced[serviceId] : TAX_PROFILES.standard[serviceId];
 }
 
+function getAirDisbursementUsd(taxesTotalUsd) {
+  const bracket =
+    AIR_COURIER_DISBURSEMENT_BRACKETS.find((entry) => taxesTotalUsd < entry.maxTaxesUsd) ??
+    AIR_COURIER_DISBURSEMENT_BRACKETS[AIR_COURIER_DISBURSEMENT_BRACKETS.length - 1];
+
+  return bracket.feeUsd;
+}
+
 export function validateForm(formData, serviceId) {
   const errors = {};
   const service = getServiceById(serviceId);
@@ -285,6 +298,9 @@ export function calculateQuote(serviceId, formData) {
   let earningsTaxUsd = 0;
   let grossIncomeTaxUsd = 0;
   let taxesTotalUsd = 0;
+  let exemptSubtotalUsd = 0;
+  let taxableChargesSubtotalUsd = 0;
+  let taxableChargesVatUsd = 0;
   let totalEstimatedUsd = 0;
   let requiresManualQuote = false;
   let manualQuoteMessage = null;
@@ -306,10 +322,10 @@ export function calculateQuote(serviceId, formData) {
 
     requiresManualQuote = courierFedEx.requiereCotizacionManual;
     manualQuoteMessage = courierFedEx.mensaje;
-    serviceCostUsd = courierFedEx.ventaTotalUsd;
-    additionalChargesUsd = 0;
-    customsFreightUsd = courierFedEx.costoTotalUsd;
-    insuranceUsd = fobUsd * INSURANCE_RATE;
+    serviceCostUsd = courierFedEx.ventaFleteUsd;
+    additionalChargesUsd = courierFedEx.altaDemandaUsd;
+    customsFreightUsd = fobUsd * AIR_COURIER_CUSTOMS_FREIGHT_FOB_RATE;
+    insuranceUsd = (fobUsd + customsFreightUsd) * INSURANCE_RATE;
     calculationBase = {
       label: service.calculationLabel,
       displayValue: formatKg(courierFedEx.pesoAplicableKg),
@@ -331,7 +347,16 @@ export function calculateQuote(serviceId, formData) {
         additionalVatUsd +
         earningsTaxUsd +
         grossIncomeTaxUsd;
-      totalEstimatedUsd = serviceCostUsd + taxesTotalUsd;
+
+      exemptSubtotalUsd = serviceCostUsd + additionalChargesUsd + taxesTotalUsd;
+
+      const disbursementUsd = getAirDisbursementUsd(taxesTotalUsd);
+      taxableChargesSubtotalUsd =
+        AIR_COURIER_AWB_USD + AIR_COURIER_DESTINATION_DELIVERY_USD + disbursementUsd;
+      taxableChargesVatUsd =
+        taxableChargesSubtotalUsd * AIR_COURIER_TAXABLE_SERVICE_VAT_RATE;
+      totalEstimatedUsd =
+        exemptSubtotalUsd + taxableChargesSubtotalUsd + taxableChargesVatUsd;
     }
   }
 
@@ -460,6 +485,9 @@ export function calculateQuote(serviceId, formData) {
       cifUsd,
       baseVatUsd,
       taxesTotalUsd,
+      exemptSubtotalUsd,
+      taxableChargesSubtotalUsd,
+      taxableChargesVatUsd,
       totalEstimatedUsd,
     },
     taxes: {
