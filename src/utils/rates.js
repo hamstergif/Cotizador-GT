@@ -2,6 +2,9 @@ export const WHATSAPP_NUMBER = "5491131411755";
 export const INSURANCE_RATE = 0.01;
 export const COURIER_MARITIME_USD_PER_KG = 10;
 export const SHARED_IMPORT_USD_PER_M3 = 450;
+export const AIR_COURIER_CUSTOMS_FUEL_RATE = 0.085;
+export const COURIER_MARITIME_CUSTOMS_USD_PER_KG = 0.5;
+export const SHARED_IMPORT_CUSTOMS_USD_PER_M3 = 50;
 
 export const COURIER_MAX_FOB_USD = 3000;
 export const COURIER_MAX_UNIT_WEIGHT_KG = 50;
@@ -16,6 +19,61 @@ export const AIR_COURIER_RATE_TABLE = [
   { label: "Hasta 70 kg", maxKg: 70, usdPerKg: 21 },
   { label: "Hasta 150 kg", maxKg: 150, usdPerKg: 18.5 },
   { label: "Mas de 150 kg", maxKg: Number.POSITIVE_INFINITY, usdPerKg: 17 },
+];
+
+export const AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A = [
+  { kg: 0.5, totalUsd: 72.17 },
+  { kg: 1, totalUsd: 78.64 },
+  { kg: 1.5, totalUsd: 85.12 },
+  { kg: 2, totalUsd: 91.59 },
+  { kg: 2.5, totalUsd: 98.07 },
+  { kg: 3, totalUsd: 106.22 },
+  { kg: 3.5, totalUsd: 114.38 },
+  { kg: 4, totalUsd: 122.53 },
+  { kg: 4.5, totalUsd: 130.69 },
+  { kg: 5, totalUsd: 138.84 },
+  { kg: 5.5, totalUsd: 144.72 },
+  { kg: 6, totalUsd: 150.6 },
+  { kg: 6.5, totalUsd: 156.48 },
+  { kg: 7, totalUsd: 162.36 },
+  { kg: 7.5, totalUsd: 168.24 },
+  { kg: 8, totalUsd: 174.12 },
+  { kg: 8.5, totalUsd: 180 },
+  { kg: 9, totalUsd: 185.88 },
+  { kg: 9.5, totalUsd: 191.76 },
+  { kg: 10, totalUsd: 197.64 },
+  { kg: 10.5, totalUsd: 201.77 },
+  { kg: 11, totalUsd: 205.9 },
+  { kg: 11.5, totalUsd: 210.03 },
+  { kg: 12, totalUsd: 214.16 },
+  { kg: 12.5, totalUsd: 218.29 },
+  { kg: 13, totalUsd: 222.42 },
+  { kg: 13.5, totalUsd: 226.55 },
+  { kg: 14, totalUsd: 230.68 },
+  { kg: 14.5, totalUsd: 234.81 },
+  { kg: 15, totalUsd: 238.94 },
+  { kg: 15.5, totalUsd: 243.07 },
+  { kg: 16, totalUsd: 247.2 },
+  { kg: 16.5, totalUsd: 251.33 },
+  { kg: 17, totalUsd: 255.46 },
+  { kg: 17.5, totalUsd: 259.59 },
+  { kg: 18, totalUsd: 263.72 },
+  { kg: 18.5, totalUsd: 267.85 },
+  { kg: 19, totalUsd: 271.98 },
+  { kg: 19.5, totalUsd: 276.11 },
+  { kg: 20, totalUsd: 280.24 },
+  { kg: 20.5, totalUsd: 284.37 },
+];
+
+export const AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS = [
+  { fromKg: 20.5, usdPerKg: 12.4 },
+  { fromKg: 45, usdPerKg: 9.46 },
+  { fromKg: 71, usdPerKg: 9.9625 },
+  { fromKg: 100, usdPerKg: 9.8916666667 },
+  { fromKg: 150, usdPerKg: 9.8333333333 },
+  { fromKg: 300, usdPerKg: 9.49 },
+  { fromKg: 500, usdPerKg: 9.41 },
+  { fromKg: 1000, usdPerKg: 9.3 },
 ];
 
 const COURIER_STANDARD_TAXES = {

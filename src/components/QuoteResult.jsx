@@ -2,7 +2,6 @@ import {
   formatDimensions,
   formatKg,
   formatM3,
-  formatPercent,
   formatUsd,
 } from "../utils/formatters";
 
@@ -56,28 +55,28 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
             <strong>{quote.calculationBase.displayValue}</strong>
           </div>
           <div className="metric-box metric-box--accent">
-            <span>Total estimado</span>
+            <span>Puesto en Argentina</span>
             <strong>{formatUsd(quote.costs.totalEstimatedUsd)}</strong>
           </div>
         </div>
 
+        <p className="result-card__footnote">
+          El total estimado en USD incluye servicio, seguro e impuestos estimados. No incluye
+          el valor del producto (FOB).
+        </p>
+
         <div className="result-section">
-          <h3>Datos logisticos usados</h3>
-          <ResultRow label="Peso bruto total" value={formatKg(quote.weights.grossWeightKg)} />
-          <ResultRow
-            label="Peso promedio por bulto"
-            value={formatKg(quote.weights.averageUnitWeightKg)}
-          />
-          <ResultRow label="Volumen total" value={formatM3(quote.volumes.totalVolumeM3)} />
+          <h3>Base de calculo usada</h3>
 
           {quote.service.id === "air-courier" ? (
             <>
+              <ResultRow label="Peso real" value={formatKg(quote.weights.grossWeightKg)} />
               <ResultRow
                 label="Peso volumetrico"
                 value={formatKg(quote.weights.volumetricWeightKg)}
               />
               <ResultRow
-                label="Peso aplicable"
+                label="Peso tomado"
                 value={formatKg(quote.weights.applicableWeightKg)}
               />
             </>
@@ -85,12 +84,14 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
 
           {quote.service.id === "maritime-courier" ? (
             <>
+              <ResultRow label="Peso real" value={formatKg(quote.weights.grossWeightKg)} />
+              <ResultRow label="Volumen total" value={formatM3(quote.volumes.totalVolumeM3)} />
               <ResultRow
-                label="Peso equivalente por volumen (1 m3 = 200 kg)"
+                label="Equivalencia por volumen (1 m3 = 200 kg)"
                 value={formatKg(quote.weights.maritimeEquivalentWeightKg)}
               />
               <ResultRow
-                label="Peso de calculo maritimo"
+                label="Peso tomado"
                 value={formatKg(quote.weights.maritimeChargeableWeightKg)}
               />
             </>
@@ -98,12 +99,13 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
 
           {quote.service.id === "shared-import" ? (
             <>
+              <ResultRow label="Volumen total" value={formatM3(quote.volumes.totalVolumeM3)} />
               <ResultRow
                 label="Volumen equivalente por peso (1 tn = 1 m3)"
                 value={formatM3(quote.volumes.sharedEquivalentVolumeM3)}
               />
               <ResultRow
-                label="Base de calculo compartida"
+                label="Volumen tomado"
                 value={formatM3(quote.volumes.sharedChargeableVolumeM3)}
               />
             </>
@@ -116,49 +118,16 @@ function QuoteResult({ quote, formData, copyState, onWhatsAppClick, onCopyClick 
         </div>
 
         <div className="result-section">
-          <h3>Desglose estimado</h3>
+          <h3>Resumen comercial</h3>
           <ResultRow label="FOB" value={formatUsd(quote.costs.fobUsd)} />
           <ResultRow
             label="Costo logistico / servicio"
             value={formatUsd(quote.costs.serviceCostUsd)}
           />
-          <ResultRow label="Seguro estimado" value={formatUsd(quote.costs.insuranceUsd)} />
-          <ResultRow label="CIF" value={formatUsd(quote.costs.cifUsd)} />
-          <ResultRow label="Base IVA" value={formatUsd(quote.costs.baseVatUsd)} />
-        </div>
-
-        <div className="result-section">
-          <h3>Impuestos estimados</h3>
+          <ResultRow label="Seguro estimado para CIF" value={formatUsd(quote.costs.insuranceUsd)} />
+          <ResultRow label="Impuestos estimados" value={formatUsd(quote.costs.taxesTotalUsd)} />
           <ResultRow
-            label={`Derechos de importacion (${formatPercent(quote.taxProfile.importDuty)})`}
-            value={formatUsd(quote.taxes.importDutyUsd)}
-          />
-          <ResultRow
-            label={`Tasa de estadistica (${formatPercent(quote.taxProfile.statisticsRate)})`}
-            value={formatUsd(quote.taxes.statisticsUsd)}
-          />
-          <ResultRow
-            label={`IVA (${formatPercent(quote.taxProfile.vat)})`}
-            value={formatUsd(quote.taxes.vatUsd)}
-          />
-          {quote.service.id === "shared-import" ? (
-            <>
-              <ResultRow
-                label={`IVA adicional (${formatPercent(quote.taxProfile.additionalVat)})`}
-                value={formatUsd(quote.taxes.additionalVatUsd)}
-              />
-              <ResultRow
-                label={`Ganancias (${formatPercent(quote.taxProfile.earningsTax)})`}
-                value={formatUsd(quote.taxes.earningsTaxUsd)}
-              />
-              <ResultRow
-                label={`Ingresos Brutos (${formatPercent(quote.taxProfile.grossIncomeTax)})`}
-                value={formatUsd(quote.taxes.grossIncomeTaxUsd)}
-              />
-            </>
-          ) : null}
-          <ResultRow
-            label="Total estimado en USD"
+            label="Total puesto en Argentina (sin producto)"
             value={formatUsd(quote.costs.totalEstimatedUsd)}
             highlight
           />

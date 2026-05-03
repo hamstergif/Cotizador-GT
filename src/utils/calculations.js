@@ -1,12 +1,17 @@
 import { formatKg, formatM3 } from "./formatters";
 import {
+  AIR_COURIER_CUSTOMS_FUEL_RATE,
+  AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A,
+  AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS,
   AIR_COURIER_RATE_TABLE,
+  COURIER_MARITIME_CUSTOMS_USD_PER_KG,
   COURIER_MARITIME_USD_PER_KG,
   COURIER_MAX_FOB_USD,
   COURIER_MAX_UNIT_WEIGHT_KG,
   GLOBAL_NOTES,
   INSURANCE_RATE,
   MARITIME_COURIER_KG_PER_M3,
+  SHARED_IMPORT_CUSTOMS_USD_PER_M3,
   SERVICES,
   SHARED_IMPORT_KG_PER_M3,
   SHARED_IMPORT_USD_PER_M3,
@@ -78,6 +83,34 @@ function getAirPricing(applicableWeightKg) {
     usdPerKg: bracket.usdPerKg,
     serviceCostUsd: applicableWeightKg * bracket.usdPerKg,
   };
+}
+
+function roundUpToHalfKg(value) {
+  return Math.ceil(Math.max(value, 0.01) * 2) / 2;
+}
+
+function getAirCustomsFreightUsd(applicableWeightKg) {
+  if (applicableWeightKg <= 0) {
+    return 0;
+  }
+
+  const roundedWeightKg = roundUpToHalfKg(applicableWeightKg);
+
+  if (roundedWeightKg <= 20.5) {
+    const bracket =
+      AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A.find((entry) => entry.kg === roundedWeightKg) ??
+      AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A[AIR_COURIER_CUSTOMS_HALF_KG_ZONE_A.length - 1];
+
+    return bracket.totalUsd * (1 + AIR_COURIER_CUSTOMS_FUEL_RATE);
+  }
+
+  const bracket = AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS.reduce(
+    (selectedBracket, entry) =>
+      applicableWeightKg >= entry.fromKg ? entry : selectedBracket,
+    AIR_COURIER_CUSTOMS_USD_PER_KG_BREAKS[0],
+  );
+
+  return applicableWeightKg * bracket.usdPerKg;
 }
 
 export function validateForm(formData, serviceId) {
@@ -155,6 +188,7 @@ export function calculateQuote(serviceId, formData) {
   const sharedChargeableVolumeM3 = Math.max(totalVolumeM3, sharedEquivalentVolumeM3);
 
   let serviceCostUsd = 0;
+  let customsFreightUsd = 0;
   let calculationBase = {
     label: service.calculationLabel,
     displayValue: formatKg(applicableWeightKg),
@@ -162,6 +196,7 @@ export function calculateQuote(serviceId, formData) {
 
   if (serviceId === "air-courier") {
     serviceCostUsd = getAirPricing(applicableWeightKg).serviceCostUsd;
+    customsFreightUsd = getAirCustomsFreightUsd(applicableWeightKg);
     calculationBase = {
       label: service.calculationLabel,
       displayValue: formatKg(applicableWeightKg),
@@ -170,6 +205,7 @@ export function calculateQuote(serviceId, formData) {
 
   if (serviceId === "maritime-courier") {
     serviceCostUsd = maritimeChargeableWeightKg * COURIER_MARITIME_USD_PER_KG;
+    customsFreightUsd = maritimeChargeableWeightKg * COURIER_MARITIME_CUSTOMS_USD_PER_KG;
     calculationBase = {
       label: service.calculationLabel,
       displayValue: formatKg(maritimeChargeableWeightKg),
@@ -178,14 +214,15 @@ export function calculateQuote(serviceId, formData) {
 
   if (serviceId === "shared-import") {
     serviceCostUsd = sharedChargeableVolumeM3 * SHARED_IMPORT_USD_PER_M3;
+    customsFreightUsd = sharedChargeableVolumeM3 * SHARED_IMPORT_CUSTOMS_USD_PER_M3;
     calculationBase = {
       label: service.calculationLabel,
       displayValue: formatM3(sharedChargeableVolumeM3),
     };
   }
 
-  const insuranceUsd = (fobUsd + serviceCostUsd) * INSURANCE_RATE;
-  const cifUsd = fobUsd + serviceCostUsd + insuranceUsd;
+  const insuranceUsd = fobUsd * INSURANCE_RATE;
+  const cifUsd = fobUsd + customsFreightUsd + insuranceUsd;
   const importDutyUsd = cifUsd * taxProfile.importDuty;
   const statisticsUsd = cifUsd * taxProfile.statisticsRate;
   const baseVatUsd = cifUsd + importDutyUsd + statisticsUsd;
@@ -193,14 +230,14 @@ export function calculateQuote(serviceId, formData) {
   const additionalVatUsd = baseVatUsd * taxProfile.additionalVat;
   const earningsTaxUsd = baseVatUsd * taxProfile.earningsTax;
   const grossIncomeTaxUsd = baseVatUsd * taxProfile.grossIncomeTax;
-  const totalEstimatedUsd =
-    cifUsd +
+  const taxesTotalUsd =
     importDutyUsd +
     statisticsUsd +
     vatUsd +
     additionalVatUsd +
     earningsTaxUsd +
     grossIncomeTaxUsd;
+  const totalEstimatedUsd = serviceCostUsd + insuranceUsd + taxesTotalUsd;
 
   const notes = [GLOBAL_NOTES.estimatorDisclaimer, GLOBAL_NOTES.taxDisclaimer];
 
@@ -254,9 +291,11 @@ export function calculateQuote(serviceId, formData) {
     costs: {
       fobUsd,
       serviceCostUsd,
+      customsFreightUsd,
       insuranceUsd,
       cifUsd,
       baseVatUsd,
+      taxesTotalUsd,
       totalEstimatedUsd,
     },
     taxes: {

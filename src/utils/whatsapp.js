@@ -97,7 +97,11 @@ export function buildWhatsAppMessage(formData, quote) {
     messageLines.push(`Ingresos Brutos: ${formatUsd(quote.taxes.grossIncomeTaxUsd)}`);
   }
 
-  messageLines.push(`Total estimado: ${formatUsd(quote.costs.totalEstimatedUsd)}`);
+  messageLines.push(`Impuestos estimados: ${formatUsd(quote.costs.taxesTotalUsd)}`);
+  messageLines.push(
+    `Total estimado puesto en Argentina (sin producto): ${formatUsd(quote.costs.totalEstimatedUsd)}`,
+  );
+  messageLines.push("Aclaracion total: no incluye el valor del producto (FOB).");
   messageLines.push("");
   messageLines.push(`Observaciones: ${buildObservations(formData)}`);
   messageLines.push("");

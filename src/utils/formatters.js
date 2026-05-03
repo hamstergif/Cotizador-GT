@@ -51,5 +51,5 @@ export function formatOptionalText(value, fallback = "No informado") {
 }
 
 export function formatYesNo(value) {
-  return value ? "Sí" : "No";
+  return value ? "Si" : "No";
 }
