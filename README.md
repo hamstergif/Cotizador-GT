@@ -14,6 +14,16 @@ npm install
 npm run dev
 ```
 
+## Deploy en Vercel
+
+La configuración recomendada ya quedó incluida en `vercel.json`.
+
+Si Vercel te muestra una pantalla en blanco, verificá que el proyecto esté usando:
+
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
 ## Configuración comercial
 
 Los valores editables están centralizados en:
