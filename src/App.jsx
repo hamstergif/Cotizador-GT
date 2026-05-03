@@ -1,5 +1,6 @@
 import { useDeferredValue, useState } from "react";
 import Disclaimer from "./components/Disclaimer";
+import FooterCredit from "./components/FooterCredit";
 import Header from "./components/Header";
 import QuoteForm from "./components/QuoteForm";
 import QuoteResult from "./components/QuoteResult";
@@ -117,6 +118,7 @@ function App() {
         </main>
 
         <Disclaimer />
+        <FooterCredit />
       </div>
     </div>
   );

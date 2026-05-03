@@ -119,10 +119,28 @@ button {
 }
 
 .hero__logo {
+  display: block;
+  object-fit: contain;
+}
+
+.hero__brand--stacked {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.hero__logo--wordmark {
+  width: min(100%, 360px);
+  height: auto;
+  max-height: 132px;
+  padding: 0;
+  filter: drop-shadow(0 16px 32px rgba(7, 32, 54, 0.14));
+}
+
+.hero__logo:not(.hero__logo--wordmark) {
   width: 60px;
   height: 60px;
   padding: 10px;
-  object-fit: contain;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -143,9 +161,9 @@ button {
 }
 
 .hero__microcopy {
-  margin-top: 4px;
   color: rgba(255, 255, 255, 0.78);
   font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .hero__content {
@@ -637,6 +655,21 @@ button {
 
 .disclaimer-card__copy + .disclaimer-card__copy {
   margin-top: 12px;
+}
+
+.site-credit {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding: 0 6px;
+}
+
+.site-credit p {
+  margin: 0;
+  color: rgba(20, 34, 53, 0.44);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  text-align: right;
 }
 
 @media (min-width: 720px) {

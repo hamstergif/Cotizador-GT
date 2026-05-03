@@ -2,37 +2,34 @@ import { useState } from "react";
 import logoFallback from "../assets/logo-fallback.svg";
 
 function Header() {
-  const [logoSource, setLogoSource] = useState("/logo-global-trip.svg");
+  const [logoSource, setLogoSource] = useState("/logo-global-trip-wordmark.png");
 
   return (
     <header className="hero">
       <div className="hero__panel">
-        <div className="hero__brand">
+        <div className="hero__brand hero__brand--stacked">
           <img
-            className="hero__logo"
+            className="hero__logo hero__logo--wordmark"
             src={logoSource}
             alt="Global Trip"
             onError={() => setLogoSource(logoFallback)}
           />
-          <div>
-            <p className="hero__eyebrow">Global Trip</p>
-            <p className="hero__microcopy">Comercio exterior y logística internacional</p>
-          </div>
+          <p className="hero__microcopy">Comercio exterior y logistica internacional</p>
         </div>
 
         <div className="hero__content">
-          <span className="hero__badge">Estimación orientativa en USD</span>
-          <h1 className="hero__title">Cotizá tu operación de comercio exterior</h1>
+          <span className="hero__badge">Estimacion orientativa en USD</span>
+          <h1 className="hero__title">Cotiza tu operacion de comercio exterior</h1>
           <p className="hero__subtitle">
-            Completá los datos de tu carga y recibí una estimación orientativa. Si te
+            Completa los datos de tu carga y recibi una estimacion orientativa. Si te
             interesa avanzar, envianos la consulta por WhatsApp y nuestro equipo revisa tu
-            operación.
+            operacion.
           </p>
 
           <div className="hero__signals">
             <div className="hero__signal">
               <strong>3 modalidades</strong>
-              <span>Courier aéreo, courier marítimo e importación compartida.</span>
+              <span>Courier aereo, courier maritimo e importacion compartida.</span>
             </div>
             <div className="hero__signal">
               <strong>Flujo simple</strong>
